@@ -246,12 +246,20 @@
     async function kirimData() {
       for(let i=1; i<=9; i++) { if(!document.querySelector(`input[name="u${i}"]:checked`)) { alert(`Belum menilai nomor ${i}.`); return; } }
 
-      let u1 = parseInt(document.querySelector('input[name="u1"]:checked').value); let u2 = parseInt(document.querySelector('input[name="u2"]:checked').value); let u3 = parseInt(document.querySelector('input[name="u3"]:checked').value);
-      let u4 = parseInt(document.querySelector('input[name="u4"]:checked').value); let u5 = parseInt(document.querySelector('input[name="u5"]:checked').value); let u6 = parseInt(document.querySelector('input[name="u6"]:checked').value);
-      let u7 = parseInt(document.querySelector('input[name="u7"]:checked').value); let u8 = parseInt(document.querySelector('input[name="u8"]:checked').value); let u9 = parseInt(document.querySelector('input[name="u9"]:checked').value);
+      let u1 = parseInt(document.querySelector('input[name="u1"]:checked').value); 
+      let u2 = parseInt(document.querySelector('input[name="u2"]:checked').value); 
+      let u3 = parseInt(document.querySelector('input[name="u3"]:checked').value);
+      let u4 = parseInt(document.querySelector('input[name="u4"]:checked').value); 
+      let u5 = parseInt(document.querySelector('input[name="u5"]:checked').value); 
+      let u6 = parseInt(document.querySelector('input[name="u6"]:checked').value);
+      let u7 = parseInt(document.querySelector('input[name="u7"]:checked').value); 
+      let u8 = parseInt(document.querySelector('input[name="u8"]:checked').value); 
+      let u9 = parseInt(document.querySelector('input[name="u9"]:checked').value);
 
-      let totalNilai = u1 + u2 + u3 + u4 + u5 + u6 + u7 + u8 + u9;
-      let nilaiIKM = (totalNilai / 9) * 25; 
+      // Perhitungan Standar PermenPAN-RB No. 14 Tahun 2017
+      let totalNilaiUnsur = u1 + u2 + u3 + u4 + u5 + u6 + u7 + u8 + u9;
+      let nilaiRataRataTertimbang = totalNilaiUnsur / 9;
+      let nilaiIKM = nilaiRataRataTertimbang * 25; 
       
       let mutuPelayanan = "-";
       if (nilaiIKM >= 88.31) mutuPelayanan = "A (Sangat Baik)";
@@ -268,7 +276,7 @@
         "Jabatan": document.getElementById('jabatan').value,
         "Jenis Layanan": document.querySelector('input[name="jenisLayanan"]:checked').value,
         "U1": u1, "U2": u2, "U3": u3, "U4": u4, "U5": u5, "U6": u6, "U7": u7, "U8": u8, "U9": u9, 
-        "Total Nilai": totalNilai, 
+        "Total Nilai": totalNilaiUnsur, 
         "Nilai IKM": nilaiIKM.toFixed(2), 
         "Mutu Pelayanan": mutuPelayanan, 
         "Kritik & Saran": document.getElementById('saran').value || "-"
@@ -421,14 +429,13 @@
     }
 
     function renderTabelAdmin(data) {
-      // 1. Kalkulasi Statistik Kumulatif & Per Layanan
       let totalResponden = data.length;
-      let totalIKM = 0;
+      let akumulasiIKM = 0;
       let layananStats = {};
 
       data.forEach(row => {
         let ikm = parseFloat(row["Nilai IKM"]) || 0;
-        totalIKM += ikm;
+        akumulasiIKM += ikm;
 
         let layanan = row["Jenis Layanan"] || "Lainnya";
         if(!layananStats[layanan]) {
@@ -438,18 +445,19 @@
         layananStats[layanan].count += 1;
       });
 
-      let indeksKumulatif = totalResponden > 0 ? (totalIKM / totalResponden).toFixed(2) : 0;
+      let indeksKumulatif = totalResponden > 0 ? (akumulasiIKM / totalResponden).toFixed(2) : "0.00";
+      let numIKM = parseFloat(indeksKumulatif);
       let mutuKumulatif = "-";
-      if (indeksKumulatif >= 88.31) mutuKumulatif = "A (Sangat Baik)";
-      else if (indeksKumulatif >= 76.61) mutuKumulatif = "B (Baik)";
-      else if (indeksKumulatif >= 65.00) mutuKumulatif = "C (Kurang Baik)";
+      
+      if (numIKM >= 88.31) mutuKumulatif = "A (Sangat Baik)";
+      else if (numIKM >= 76.61) mutuKumulatif = "B (Baik)";
+      else if (numIKM >= 65.00) mutuKumulatif = "C (Kurang Baik)";
       else if (totalResponden > 0) mutuKumulatif = "D (Tidak Baik)";
 
-      // 2. Buat HTML Kartu Per Layanan
       let layananHTML = '';
       for (const [layanan, stat] of Object.entries(layananStats)) {
-         let avg = (stat.totalIKM / stat.count).toFixed(2);
-         let m = avg >= 88.31 ? "A" : (avg >= 76.61 ? "B" : (avg >= 65.0 ? "C" : "D"));
+         let avgLayanan = (stat.totalIKM / stat.count).toFixed(2);
+         let m = avgLayanan >= 88.31 ? "A" : (avgLayanan >= 76.61 ? "B" : (avgLayanan >= 65.0 ? "C" : "D"));
          let colorText = m === "A" ? "text-green-700" : (m === "B" ? "text-blue-700" : (m === "C" ? "text-yellow-600" : "text-red-600"));
          
          layananHTML += `
@@ -458,7 +466,7 @@
              <div class="flex justify-between items-end mt-auto">
                 <div class="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded font-semibold">${stat.count} Responden</div>
                 <div class="text-right">
-                  <div class="text-lg font-black ${colorText}">${avg}</div>
+                  <div class="text-lg font-black ${colorText}">${avgLayanan}</div>
                   <div class="text-[10px] font-bold text-slate-400">MUTU: ${m}</div>
                 </div>
              </div>
@@ -467,21 +475,19 @@
       }
       if(Object.keys(layananStats).length === 0) layananHTML = `<div class="text-sm text-slate-500 col-span-full">Belum ada data layanan untuk dihitung.</div>`;
 
-      // 3. Render Keseluruhan Dashboard
       let html = `
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
               <h2 class="text-2xl font-bold text-slate-900">Dashboard Admin SKM</h2>
-              <p class="text-sm text-slate-500">Pemantauan Indeks Kepuasan Masyarakat</p>
+              <p class="text-sm text-slate-500">Standar PermenPAN-RB Nomor 14 Tahun 2017</p>
             </div>
             <button onclick="closeAdminView()" class="bg-red-50 text-red-600 border border-red-200 px-5 py-2.5 rounded-xl font-semibold hover:bg-red-100 transition shadow-sm text-sm">Tutup Dashboard</button>
         </div>
 
-        <!-- Ringkasan Kumulatif -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
                 <div class="relative z-10">
-                    <p class="text-blue-100 text-sm font-medium mb-1">Nilai Indeks Kumulatif</p>
+                    <p class="text-blue-100 text-sm font-medium mb-1">Nilai Indeks Kumulatif (IKM)</p>
                     <div class="text-4xl font-black mb-1">${indeksKumulatif}</div>
                     <p class="text-sm font-bold bg-white/20 inline-block px-3 py-1 rounded-full mt-2">Mutu: ${mutuKumulatif}</p>
                 </div>
@@ -490,17 +496,15 @@
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center text-center">
                 <p class="text-slate-500 text-sm font-medium mb-2">Total Responden Masuk</p>
                 <div class="text-5xl font-black text-slate-800">${totalResponden}</div>
-                <p class="text-xs text-slate-400 mt-3">Data tersinkronisasi dari Firebase</p>
+                <p class="text-xs text-slate-400 mt-3">Tersinkronisasi otomatis dengan Firebase</p>
             </div>
         </div>
         
-        <!-- Indeks Per Layanan -->
-        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Indeks Kepuasan per Layanan</h3>
+        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Nilai Indeks per Jenis Layanan</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-10">
             ${layananHTML}
         </div>
 
-        <!-- Tabel Detail -->
         <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Detail Data Responden</h3>
         <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm mb-6">
             <table class="w-full text-sm text-left whitespace-nowrap">
