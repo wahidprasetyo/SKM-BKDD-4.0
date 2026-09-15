@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Library PDF Generator -->
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <!-- Library SheetJS untuk Export Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -21,7 +23,7 @@
   <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3 sm:space-x-4">
-        <img src="https://i.ibb.co.com/DjVWc28/afcda308e5f15b9264a9837f97af436c-1.png" alt="Logo Pemkab Sorong" id="logoAdmin" onclick="clickLogoAdmin()" class="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-sm cursor-pointer select-none">
+        <img src="https://i.ibb.co.com/DjVWc28/afcda308e5f15b9264a9837f97af436c-1.png" alt="Logo Pemkab Sorong" id="logoAdmin" onclick="clickLogoAdmin()" class="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-sm cursor-pointer select-none" title="Klik 5x untuk buka Admin">
         <div>
           <h1 class="font-bold text-slate-900 tracking-tight text-sm sm:text-base">BKDD KABUPATEN SORONG</h1>
           <p class="text-[10px] sm:text-xs text-slate-500">Survei Kepuasan Masyarakat</p>
@@ -185,7 +187,6 @@
   <script>
     const URL_TEMPLATE_PDF = "template_sertifikat.pdf"; 
 
-    // Pengaturan Sertifikat Dinamis (Bisa diatur via Admin & disimpan di localStorage)
     let configSertifikat = JSON.parse(localStorage.getItem('configSertifikat_SKM')) || {
       NOMOR_SURAT: "Nomor: 012/BM.01.02/S.034/KR.XIV/VII/2026",
       TEKS_PEMBUKA: "Kepala Kantor Regional XIV BKN Manokwari, berdasarkan Undang - Undang Nomor 20 Tahun 2023 tentang\\nAparatur Sipil Negara, dengan ini menyatakan bahwa Saudara/Saudari yang tersebut di bawah ini:",
@@ -195,6 +196,7 @@
 
     let dataSertifikatGlobal = { nama: "", config: configSertifikat };
     let currentStep = 1;
+    let dataCacheAdmin = []; // Menyimpan cache data untuk export excel
 
     const daftarLayanan = ["Kenaikan Gaji Berkala (KGB)", "Tunjangan Keluarga", "Kenaikan Pangkat", "Satya Lencana Karya Satya", "Taspen dan Pensiun", "Mutasi Kepegawaian", "UD & UPKP", "Tugas Belajar", "Pengusulan Cuti Pegawai", "Pendampingan SKP", "Penerimaan Calon ASN", "Peremajaan Data", "Pencantuman Gelar", "Disiplin ASN"];
     const daftarU9 = [
@@ -257,7 +259,6 @@
       let u8 = parseInt(document.querySelector('input[name="u8"]:checked').value); 
       let u9 = parseInt(document.querySelector('input[name="u9"]:checked').value);
 
-      // Perhitungan Standar PermenPAN-RB No. 14 Tahun 2017
       let totalNilaiUnsur = u1 + u2 + u3 + u4 + u5 + u6 + u7 + u8 + u9;
       let nilaiRataRataTertimbang = totalNilaiUnsur / 9;
       let nilaiIKM = nilaiRataRataTertimbang * 25; 
@@ -377,7 +378,7 @@
     }
 
     // =========================================================================
-    // FITUR MENU ADMIN & PENGATURAN SERTIFIKAT
+    // FITUR MENU ADMIN, PENGATURAN SERTIFIKAT & EXPORT EXCEL
     // =========================================================================
     let clickCount = 0;
     let clickTimer;
@@ -423,6 +424,7 @@
         });
 
         dataRows.sort((a, b) => b.WaktuAsli - a.WaktuAsli);
+        dataCacheAdmin = dataRows; // Simpan ke cache untuk export excel
         renderTabelAdmin(dataRows);
       } catch (e) {
         dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan: ${e.message}</div>
@@ -438,6 +440,43 @@
       
       localStorage.setItem('configSertifikat_SKM', JSON.stringify(configSertifikat));
       alert('Pengaturan sertifikat berhasil disimpan!');
+    }
+
+    function exportToExcel() {
+      if(!dataCacheAdmin || dataCacheAdmin.length === 0) {
+        alert("Tidak ada data untuk diexport!");
+        return;
+      }
+
+      let formattedData = dataCacheAdmin.map((item, index) => ({
+        "No": index + 1,
+        "Tanggal": item.TanggalDibuat,
+        "Nama Lengkap": item["Nama Lengkap"],
+        "NIP": item["NIP"],
+        "Status Kepegawaian": item["Status Kepegawaian"],
+        "Perangkat Daerah / Unit Kerja": item["Perangkat Daerah / Unit Kerja"],
+        "Jabatan": item["Jabatan"],
+        "Jenis Layanan": item["Jenis Layanan"],
+        "U1": item["U1"],
+        "U2": item["U2"],
+        "U3": item["U3"],
+        "U4": item["U4"],
+        "U5": item["U5"],
+        "U6": item["U6"],
+        "U7": item["U7"],
+        "U8": item["U8"],
+        "U9": item["U9"],
+        "Total Nilai": item["Total Nilai"],
+        "Nilai IKM": item["Nilai IKM"],
+        "Mutu Pelayanan": item["Mutu Pelayanan"],
+        "Kritik & Saran": item["Kritik & Saran"]
+      }));
+
+      let worksheet = XLSX.utils.json_to_sheet(formattedData);
+      let workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Responden SKM");
+      
+      XLSX.writeFile(workbook, `Rekap_Data_SKM_BKDD_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
     function renderTabelAdmin(data) {
@@ -493,7 +532,12 @@
               <h2 class="text-2xl font-bold text-slate-900">Dashboard Admin SKM</h2>
               <p class="text-sm text-slate-500">Standar PermenPAN-RB Nomor 14 Tahun 2017</p>
             </div>
-            <button onclick="closeAdminView()" class="bg-red-50 text-red-600 border border-red-200 px-5 py-2.5 rounded-xl font-semibold hover:bg-red-100 transition shadow-sm text-sm">Tutup Dashboard</button>
+            <div class="flex items-center gap-2">
+                <button onclick="exportToExcel()" class="bg-green-700 text-white border border-green-800 px-5 py-2.5 rounded-xl font-semibold hover:bg-green-800 transition shadow-sm text-sm flex items-center gap-2 cursor-pointer">
+                   📥 Export ke Excel
+                </button>
+                <button onclick="closeAdminView()" class="bg-red-50 text-red-600 border border-red-200 px-5 py-2.5 rounded-xl font-semibold hover:bg-red-100 transition shadow-sm text-sm cursor-pointer">Tutup Dashboard</button>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -539,7 +583,7 @@
                     <textarea id="cfgTeksKegiatan" rows="3" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm">${configSertifikat.TEKS_KEGIATAN}</textarea>
                 </div>
                 <div>
-                    <button onclick="simpanPengaturanSertifikat()" class="bg-slate-900 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-slate-800 transition shadow-md">Simpan Perubahan Sertifikat</button>
+                    <button onclick="simpanPengaturanSertifikat()" class="bg-slate-900 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-slate-800 transition shadow-md cursor-pointer">Simpan Perubahan Sertifikat</button>
                 </div>
             </div>
         </div>
