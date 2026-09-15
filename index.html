@@ -27,7 +27,7 @@
           <p class="text-[10px] sm:text-xs text-slate-500">Survei Kepuasan Masyarakat</p>
         </div>
       </div>
-      <span class="text-[10px] sm:text-xs font-semibold bg-blue-50 text-blue-800 px-3 py-1 rounded-full border border-blue-200 hidden sm:inline-block">E-SKM v4.0 (Firebase)</span>
+      <span class="text-[10px] sm:text-xs font-semibold bg-blue-50 text-blue-800 px-3 py-1 rounded-full border border-blue-200 hidden sm:inline-block">E-SKM v4.0</span>
     </div>
   </header>
 
@@ -185,7 +185,8 @@
   <script>
     const URL_TEMPLATE_PDF = "template_sertifikat.pdf"; 
 
-    const configSertifikat = {
+    // Pengaturan Sertifikat Dinamis (Bisa diatur via Admin & disimpan di localStorage)
+    let configSertifikat = JSON.parse(localStorage.getItem('configSertifikat_SKM')) || {
       NOMOR_SURAT: "Nomor: 012/BM.01.02/S.034/KR.XIV/VII/2026",
       TEKS_PEMBUKA: "Kepala Kantor Regional XIV BKN Manokwari, berdasarkan Undang - Undang Nomor 20 Tahun 2023 tentang\\nAparatur Sipil Negara, dengan ini menyatakan bahwa Saudara/Saudari yang tersebut di bawah ini:",
       TEKS_SEBAGAI: "sebagai Peserta dalam kegiatan:",
@@ -294,6 +295,7 @@
         document.getElementById('successCard').classList.remove('hidden');
         
         dataSertifikatGlobal.nama = payload["Nama Lengkap"];
+        dataSertifikatGlobal.config = configSertifikat;
       } catch (e) {
         alert('Gagal menyimpan data ke Firebase: ' + e.message); 
         btn.innerHTML = originText; 
@@ -375,7 +377,7 @@
     }
 
     // =========================================================================
-    // FITUR MENU ADMIN
+    // FITUR MENU ADMIN & PENGATURAN SERTIFIKAT
     // =========================================================================
     let clickCount = 0;
     let clickTimer;
@@ -426,6 +428,16 @@
         dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan: ${e.message}</div>
                                <div class="text-center"><button onclick="closeAdminView()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Tutup Admin</button></div>`;
       }
+    }
+
+    function simpanPengaturanSertifikat() {
+      configSertifikat.NOMOR_SURAT = document.getElementById('cfgNomorSurat').value;
+      configSertifikat.TEKS_PEMBUKA = document.getElementById('cfgTeksPembuka').value;
+      configSertifikat.TEKS_SEBAGAI = document.getElementById('cfgTeksSebagai').value;
+      configSertifikat.TEKS_KEGIATAN = document.getElementById('cfgTeksKegiatan').value;
+      
+      localStorage.setItem('configSertifikat_SKM', JSON.stringify(configSertifikat));
+      alert('Pengaturan sertifikat berhasil disimpan!');
     }
 
     function renderTabelAdmin(data) {
@@ -503,6 +515,33 @@
         <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Nilai Indeks per Jenis Layanan</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-10">
             ${layananHTML}
+        </div>
+
+        <!-- FORM PENGATURAN TEKS SERTIFIKAT -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm mb-10">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Pengaturan Teks Sertifikat PDF</h3>
+            <p class="text-xs text-slate-500 mb-4">Ubah teks sertifikat langsung di sini tanpa perlu mengedit kode program.</p>
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Surat</label>
+                    <input type="text" id="cfgNomorSurat" value="${configSertifikat.NOMOR_SURAT}" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Teks Pembuka</label>
+                    <textarea id="cfgTeksPembuka" rows="2" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm">${configSertifikat.TEKS_PEMBUKA}</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Teks Sebagai</label>
+                    <input type="text" id="cfgTeksSebagai" value="${configSertifikat.TEKS_SEBAGAI}" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Teks Kegiatan</label>
+                    <textarea id="cfgTeksKegiatan" rows="3" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm">${configSertifikat.TEKS_KEGIATAN}</textarea>
+                </div>
+                <div>
+                    <button onclick="simpanPengaturanSertifikat()" class="bg-slate-900 text-white text-sm font-bold px-6 py-3 rounded-xl hover:bg-slate-800 transition shadow-md">Simpan Perubahan Sertifikat</button>
+                </div>
+            </div>
         </div>
 
         <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Detail Data Responden</h3>
