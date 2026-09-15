@@ -70,7 +70,7 @@
             <option value="Sekretariat Daerah">Sekretariat Daerah</option>
             <option value="Dinas Kesehatan">Dinas Kesehatan</option>
             <option value="Dinas Pendidikan dan Kebudayaan">Dinas Pendidikan dan Kebudayaan</option>
-            <!-- Tambahkan kembali option unit kerja Anda yang lain di sini agar tidak terlalu panjang -->
+            <option value="Lainnya">Lainnya...</option>
           </select>
         </div>
 
@@ -121,6 +121,11 @@
       </div>
     </form>
 
+    <!-- UI DASHBOARD ADMIN (Awalnya disembunyikan, tampil saat klik logo 5x) -->
+    <div id="adminDashboard" class="hidden w-full max-w-full bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 animate-[fadeIn_0.4s]">
+       <!-- Konten tabel akan di-generate oleh JavaScript renderTabelAdmin() -->
+    </div>
+
     <!-- UI SUCCESS CARD DENGAN TOMBOL DOWNLOAD -->
     <div id="successCard" class="hidden absolute inset-0 z-10 bg-slate-50 flex flex-col items-center justify-center p-6 text-center animate-[fadeIn_0.5s_ease-out]">
       <div class="w-20 h-20 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-4xl mx-auto font-bold shadow-sm mb-6">✓</div>
@@ -152,7 +157,7 @@
   <!-- SCRIPT FIREBASE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
     // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI
     const firebaseConfig = {
@@ -167,21 +172,21 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Mengekspos fungsi Firebase ke window agar bisa dipanggil dari inline HTML onClick
     window.db = db;
     window.collection = collection;
     window.addDoc = addDoc;
     window.getDocs = getDocs;
     window.query = query;
     window.where = where;
+    window.orderBy = orderBy;
   </script>
 
-  <!-- SCRIPT LOGIKA UTAMA (TIDAK PERLU DIUBAH KECUALI NAMA FILE PDF) -->
+  <!-- SCRIPT LOGIKA UTAMA -->
   <script>
-    // 2. MASUKKAN URL FILE TEMPLATE PDF ANDA DI SINI (Contoh: diletakkan di GitHub repo Anda)
+    // 2. NAMA FILE TEMPLATE PDF DI GITHUB
     const URL_TEMPLATE_PDF = "template_sertifikat.pdf"; 
 
-    // Pengaturan Teks Sertifikat (Dipindah dari Google Sheet ke sini)
+    // Pengaturan Teks Sertifikat
     const configSertifikat = {
       NOMOR_SURAT: "Nomor: 012/BM.01.02/S.034/KR.XIV/VII/2026",
       TEKS_PEMBUKA: "Kepala Kantor Regional XIV BKN Manokwari, berdasarkan Undang - Undang Nomor 20 Tahun 2023 tentang\\nAparatur Sipil Negara, dengan ini menyatakan bahwa Saudara/Saudari yang tersebut di bawah ini:",
@@ -243,16 +248,9 @@
     async function kirimData() {
       for(let i=1; i<=9; i++) { if(!document.querySelector(`input[name="u${i}"]:checked`)) { alert(`Belum menilai nomor ${i}.`); return; } }
 
-      // Logika Kalkulasi Dipindah dari Apps Script ke sini
-      let u1 = parseInt(document.querySelector('input[name="u1"]:checked').value);
-      let u2 = parseInt(document.querySelector('input[name="u2"]:checked').value);
-      let u3 = parseInt(document.querySelector('input[name="u3"]:checked').value);
-      let u4 = parseInt(document.querySelector('input[name="u4"]:checked').value);
-      let u5 = parseInt(document.querySelector('input[name="u5"]:checked').value);
-      let u6 = parseInt(document.querySelector('input[name="u6"]:checked').value);
-      let u7 = parseInt(document.querySelector('input[name="u7"]:checked').value);
-      let u8 = parseInt(document.querySelector('input[name="u8"]:checked').value);
-      let u9 = parseInt(document.querySelector('input[name="u9"]:checked').value);
+      let u1 = parseInt(document.querySelector('input[name="u1"]:checked').value); let u2 = parseInt(document.querySelector('input[name="u2"]:checked').value); let u3 = parseInt(document.querySelector('input[name="u3"]:checked').value);
+      let u4 = parseInt(document.querySelector('input[name="u4"]:checked').value); let u5 = parseInt(document.querySelector('input[name="u5"]:checked').value); let u6 = parseInt(document.querySelector('input[name="u6"]:checked').value);
+      let u7 = parseInt(document.querySelector('input[name="u7"]:checked').value); let u8 = parseInt(document.querySelector('input[name="u8"]:checked').value); let u9 = parseInt(document.querySelector('input[name="u9"]:checked').value);
 
       let totalNilai = u1 + u2 + u3 + u4 + u5 + u6 + u7 + u8 + u9;
       let nilaiIKM = (totalNilai / 9) * 25; 
@@ -271,10 +269,9 @@
         "Perangkat Daerah / Unit Kerja": document.getElementById('unitKerja').value, 
         "Jabatan": document.getElementById('jabatan').value,
         "Jenis Layanan": document.querySelector('input[name="jenisLayanan"]:checked').value,
-        "U1 (Persyaratan)": u1, "U2 (Prosedur)": u2, "U3 (Waktu)": u3, "U4 (Biaya/Tarif)": u4, "U5 (Produk)": u5, 
-        "U6 (Kompetensi)": u6, "U7 (Perilaku)": u7, "U8 (Pengaduan)": u8, "U9 (Sarpras)": u9, 
-        "Total Nilai U1-U9": totalNilai, 
-        "Nilai IKM Konversi": nilaiIKM.toFixed(2), 
+        "U1": u1, "U2": u2, "U3": u3, "U4": u4, "U5": u5, "U6": u6, "U7": u7, "U8": u8, "U9": u9, 
+        "Total Nilai": totalNilai, 
+        "Nilai IKM": nilaiIKM.toFixed(2), 
         "Mutu Pelayanan": mutuPelayanan, 
         "Kritik & Saran": document.getElementById('saran').value || "-"
       };
@@ -283,7 +280,6 @@
       btn.innerHTML = "Memproses Data..."; btn.disabled = true;
 
       try {
-        // Proses simpan ke Firestore
         await window.addDoc(window.collection(window.db, "Data_SKM_Baru"), payload);
         
         document.getElementById('skmForm').classList.add('hidden');
@@ -299,18 +295,12 @@
       }
     }
 
-    // -------------------------------------------------------------
-    // LOGIKA GENERATE PDF (Mengambil file via Fetch API, bukan Base64)
-    // -------------------------------------------------------------
+    // --- LOGIKA GENERATE PDF ---
     async function buatDokumenPDF(nama, config) {
         const { PDFDocument, rgb, StandardFonts } = PDFLib;
-        
-        // Ambil PDF Template secara lokal/URL
         const urlBytes = await fetch(URL_TEMPLATE_PDF).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(urlBytes);
-        
-        const pages = pdfDoc.getPages();
-        const page = pages[0]; 
+        const page = pdfDoc.getPages()[0]; 
         const { width, height } = page.getSize(); 
         
         const fontReg = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -322,63 +312,40 @@
         };
     
         const wrapText = (text, maxWidth, font, size) => {
-          const words = text.split(" ");
-          let lines = [];
-          let currentLine = words[0];
-    
+          const words = text.split(" "); let lines = []; let currentLine = words[0];
           for (let i = 1; i < words.length; i++) {
-            const word = words[i];
-            const width = font.widthOfTextAtSize(currentLine + " " + word, size);
-            if (width < maxWidth) {
-              currentLine += " " + word;
-            } else {
-              lines.push(currentLine);
-              currentLine = word;
-            }
+            const width = font.widthOfTextAtSize(currentLine + " " + words[i], size);
+            if (width < maxWidth) currentLine += " " + words[i]; else { lines.push(currentLine); currentLine = words[i]; }
           }
-          lines.push(currentLine);
-          return lines;
+          lines.push(currentLine); return lines;
         };
     
         drawCenter(config.NOMOR_SURAT || "", height - 200, fontReg, 13);
         
         let currY = height - 240;
         if(config.TEKS_PEMBUKA) {
-           let wrappedPembuka = wrapText(config.TEKS_PEMBUKA.replace(/\\n/g, " "), 650, fontReg, 11);
-           wrappedPembuka.forEach(baris => { drawCenter(baris, currY, fontReg, 11); currY -= 15; });
+           wrapText(config.TEKS_PEMBUKA.replace(/\\n/g, " "), 650, fontReg, 11).forEach(baris => { drawCenter(baris, currY, fontReg, 11); currY -= 15; });
         }
         
-        currY -= 25;
-        drawCenter((nama || "PESERTA").toUpperCase(), currY, fontBold, 26);
-        
-        currY -= 25;
-        drawCenter(config.TEKS_SEBAGAI || "", currY, fontReg, 12);
+        currY -= 25; drawCenter((nama || "PESERTA").toUpperCase(), currY, fontBold, 26);
+        currY -= 25; drawCenter(config.TEKS_SEBAGAI || "", currY, fontReg, 12);
         
         currY -= 20; 
         if(config.TEKS_KEGIATAN) {
-           let wrappedKegiatan = wrapText(config.TEKS_KEGIATAN.replace(/\\n/g, " "), 520, fontBold, 12);
-           wrappedKegiatan.forEach(baris => { drawCenter(baris, currY, fontBold, 12); currY -= 16; });
+           wrapText(config.TEKS_KEGIATAN.replace(/\\n/g, " "), 520, fontBold, 12).forEach(baris => { drawCenter(baris, currY, fontBold, 12); currY -= 16; });
         }
     
         const pdfBytesSaved = await pdfDoc.save();
         const blob = new Blob([pdfBytesSaved], { type: "application/pdf" });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
         link.download = `Sertifikat_B.01_${nama.replace(/\s+/g, '_')}.pdf`;
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
     async function triggerDownloadBaru(btnElement) {
-        const originTxt = btnElement.innerHTML;
-        btnElement.innerHTML = "Mengunduh..."; btnElement.disabled = true;
-
-        try {
-           await buatDokumenPDF(dataSertifikatGlobal.nama, dataSertifikatGlobal.config);
-           btnElement.innerHTML = "✅ Berhasil";
-        } catch(e) { 
-           alert("Gagal membuat sertifikat. Pastikan file PDF template ada di URL yang benar.");
-        }
-        
+        const originTxt = btnElement.innerHTML; btnElement.innerHTML = "Mengunduh..."; btnElement.disabled = true;
+        try { await buatDokumenPDF(dataSertifikatGlobal.nama, dataSertifikatGlobal.config); btnElement.innerHTML = "✅ Berhasil"; } 
+        catch(e) { alert("Gagal membuat sertifikat. Pastikan file PDF template ada di URL yang benar."); }
         setTimeout(() => { btnElement.innerHTML = originTxt; btnElement.disabled = false; }, 3000);
     }
 
@@ -386,38 +353,141 @@
         const nipStr = document.getElementById('nipPencarian').value.trim();
         if(!nipStr) { alert("Silakan masukkan NIP!"); return; }
 
-        const originTxt = btnElement.innerHTML;
-        btnElement.innerHTML = "Mencari..."; btnElement.disabled = true;
-
+        const originTxt = btnElement.innerHTML; btnElement.innerHTML = "Mencari..."; btnElement.disabled = true;
         try {
-          // Melakukan pencarian Query di Firestore berdasarkan NIP
           const q = window.query(window.collection(window.db, "Data_SKM_Baru"), window.where("NIP", "==", nipStr));
           const querySnapshot = await window.getDocs(q);
           
-          if(querySnapshot.empty) {
-             alert("NIP Tidak Ditemukan.");
-          } else {
-             // Ambil dokumen terbaru (jika NIP mengisi lebih dari sekali, kita ambil yang pertama terbaca)
-             let namaResponden = "";
-             querySnapshot.forEach((doc) => {
-                namaResponden = doc.data()["Nama Lengkap"];
-             });
-
+          if(querySnapshot.empty) { alert("NIP Tidak Ditemukan."); } 
+          else {
+             let namaResponden = ""; querySnapshot.forEach((doc) => { namaResponden = doc.data()["Nama Lengkap"]; });
              btnElement.innerHTML = "Mengunduh...";
              await buatDokumenPDF(namaResponden, configSertifikat);
              btnElement.innerHTML = "✅ Selesai";
           }
-        } catch(e) { 
-           alert("Gagal menyambung ke Firebase."); 
-        }
-
+        } catch(e) { alert("Gagal menyambung ke Firebase."); }
         setTimeout(() => { btnElement.innerHTML = originTxt; btnElement.disabled = false; }, 3000);
     }
 
-    function clickLogoAdmin() { 
-        // Anda dapat menambahkan logika admin tabel di sini seperti sebelumnya
-        // menggunakan getDocs(collection(db, "Data_SKM_Baru")) untuk menarik data.
-        alert("Mode admin tidak dipasang di template ini untuk fokus pada input data.");
+    // =========================================================================
+    // FITUR MENU ADMIN (Logika 5 Klik dan Fetch Firestore)
+    // =========================================================================
+    let clickCount = 0;
+    let clickTimer;
+
+    function clickLogoAdmin() {
+      clickCount++;
+      if (clickTimer) clearTimeout(clickTimer);
+      
+      // Jika dalam 2 detik tidak mencapai 5 klik, reset ke 0
+      clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
+
+      if (clickCount >= 5) {
+        clickCount = 0; // Reset
+        let password = prompt("Masukkan Password Admin:");
+        
+        // Cek password sesuai dengan di Apps Script lama
+        if (password === "adminBKDD2026") {
+          loadAdminData();
+        } else if (password !== null) {
+          alert("Password Salah!");
+        }
+      }
+    }
+
+    async function loadAdminData() {
+      // Sembunyikan form depan, tampilkan dashboard admin
+      document.getElementById('skmForm').classList.add('hidden');
+      document.getElementById('progressContainer').classList.add('hidden');
+      document.getElementById('pencarianSistem').classList.add('hidden');
+      
+      const dashboard = document.getElementById('adminDashboard');
+      dashboard.classList.remove('hidden');
+      dashboard.innerHTML = `<div class="text-center py-10 text-slate-500 font-medium animate-pulse">Memuat data dari Firebase...</div>`;
+
+      try {
+        // Tarik data dari Firestore, langsung urutkan dari yang terbaru jika Firebase mendukung, 
+        // Namun karena pengaturan index diperlukan, kita ambil semua dan urutkan via JavaScript
+        const querySnapshot = await window.getDocs(window.collection(window.db, "Data_SKM_Baru"));
+        let dataRows = [];
+        
+        querySnapshot.forEach((doc) => {
+          let data = doc.data();
+          // Format Timestamp Firebase menjadi string (Tanggal)
+          let tglStr = "-";
+          if (data.Timestamp && data.Timestamp.toDate) {
+             let d = data.Timestamp.toDate();
+             tglStr = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+          }
+          dataRows.push({ ...data, TanggalDibuat: tglStr, WaktuAsli: data.Timestamp ? data.Timestamp.toMillis() : 0 });
+        });
+
+        // Urutkan dari yang terbaru (Descending)
+        dataRows.sort((a, b) => b.WaktuAsli - a.WaktuAsli);
+        renderTabelAdmin(dataRows);
+      } catch (e) {
+        dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan: ${e.message}</div>
+                               <div class="text-center"><button onclick="closeAdminView()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Tutup Admin</button></div>`;
+      }
+    }
+
+    function renderTabelAdmin(data) {
+      let html = `
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Dashboard Admin</h2>
+              <p class="text-sm text-slate-500">Total Responden: <span class="font-bold text-blue-700">${data.length}</span></p>
+            </div>
+            <button onclick="closeAdminView()" class="bg-red-50 text-red-600 border border-red-200 px-5 py-2.5 rounded-xl font-semibold hover:bg-red-100 transition shadow-sm text-sm">Tutup Dashboard</button>
+        </div>
+        
+        <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+            <table class="w-full text-sm text-left whitespace-nowrap">
+                <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                    <tr>
+                        <th class="px-4 py-3">Tanggal</th>
+                        <th class="px-4 py-3">Nama & NIP</th>
+                        <th class="px-4 py-3">Unit Kerja</th>
+                        <th class="px-4 py-3">Jenis Layanan</th>
+                        <th class="px-4 py-3 text-center">Nilai IKM</th>
+                        <th class="px-4 py-3">Mutu</th>
+                        <th class="px-4 py-3">Saran</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 bg-white">
+      `;
+
+      if (data.length === 0) {
+        html += `<tr><td colspan="7" class="px-4 py-10 text-center text-slate-500">Belum ada data responden.</td></tr>`;
+      } else {
+        data.forEach(row => {
+          html += `
+            <tr class="hover:bg-blue-50/50 transition">
+                <td class="px-4 py-3 text-slate-500 text-xs">${row.TanggalDibuat}</td>
+                <td class="px-4 py-3">
+                  <div class="font-bold text-slate-800">${row["Nama Lengkap"] || "-"}</div>
+                  <div class="text-xs text-slate-500">${row["NIP"] || "-"}</div>
+                </td>
+                <td class="px-4 py-3 text-slate-600">${row["Perangkat Daerah / Unit Kerja"] || "-"}</td>
+                <td class="px-4 py-3 text-slate-600">${row["Jenis Layanan"] || "-"}</td>
+                <td class="px-4 py-3 text-center font-bold text-blue-700 bg-blue-50/30">${row["Nilai IKM"] || "-"}</td>
+                <td class="px-4 py-3 font-semibold text-slate-700">${row["Mutu Pelayanan"] || "-"}</td>
+                <td class="px-4 py-3 max-w-[200px] truncate" title="${row["Kritik & Saran"] || "-"}">${row["Kritik & Saran"] || "-"}</td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `</tbody></table></div>`;
+      document.getElementById('adminDashboard').innerHTML = html;
+    }
+
+    function closeAdminView() {
+      document.getElementById('adminDashboard').classList.add('hidden');
+      document.getElementById('skmForm').classList.remove('hidden');
+      document.getElementById('progressContainer').classList.remove('hidden');
+      document.getElementById('pencarianSistem').classList.remove('hidden');
+      window.scrollTo(0, 0);
     }
   </script>
 </body>
