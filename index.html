@@ -121,9 +121,9 @@
       </div>
     </form>
 
-    <!-- UI DASHBOARD ADMIN (Awalnya disembunyikan, tampil saat klik logo 5x) -->
+    <!-- UI DASHBOARD ADMIN -->
     <div id="adminDashboard" class="hidden w-full max-w-full bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 animate-[fadeIn_0.4s]">
-       <!-- Konten tabel akan di-generate oleh JavaScript renderTabelAdmin() -->
+       <!-- Konten akan diisi oleh JS -->
     </div>
 
     <!-- UI SUCCESS CARD DENGAN TOMBOL DOWNLOAD -->
@@ -183,10 +183,8 @@
 
   <!-- SCRIPT LOGIKA UTAMA -->
   <script>
-    // 2. NAMA FILE TEMPLATE PDF DI GITHUB
     const URL_TEMPLATE_PDF = "template_sertifikat.pdf"; 
 
-    // Pengaturan Teks Sertifikat
     const configSertifikat = {
       NOMOR_SURAT: "Nomor: 012/BM.01.02/S.034/KR.XIV/VII/2026",
       TEKS_PEMBUKA: "Kepala Kantor Regional XIV BKN Manokwari, berdasarkan Undang - Undang Nomor 20 Tahun 2023 tentang\\nAparatur Sipil Negara, dengan ini menyatakan bahwa Saudara/Saudari yang tersebut di bawah ini:",
@@ -295,7 +293,6 @@
       }
     }
 
-    // --- LOGIKA GENERATE PDF ---
     async function buatDokumenPDF(nama, config) {
         const { PDFDocument, rgb, StandardFonts } = PDFLib;
         const urlBytes = await fetch(URL_TEMPLATE_PDF).then(res => res.arrayBuffer());
@@ -370,7 +367,7 @@
     }
 
     // =========================================================================
-    // FITUR MENU ADMIN (Logika 5 Klik dan Fetch Firestore)
+    // FITUR MENU ADMIN
     // =========================================================================
     let clickCount = 0;
     let clickTimer;
@@ -378,15 +375,12 @@
     function clickLogoAdmin() {
       clickCount++;
       if (clickTimer) clearTimeout(clickTimer);
-      
-      // Jika dalam 2 detik tidak mencapai 5 klik, reset ke 0
       clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
 
       if (clickCount >= 5) {
-        clickCount = 0; // Reset
+        clickCount = 0; 
         let password = prompt("Masukkan Password Admin:");
         
-        // Cek password sesuai dengan di Apps Script lama
         if (password === "adminBKDD2026") {
           loadAdminData();
         } else if (password !== null) {
@@ -396,24 +390,20 @@
     }
 
     async function loadAdminData() {
-      // Sembunyikan form depan, tampilkan dashboard admin
       document.getElementById('skmForm').classList.add('hidden');
       document.getElementById('progressContainer').classList.add('hidden');
       document.getElementById('pencarianSistem').classList.add('hidden');
       
       const dashboard = document.getElementById('adminDashboard');
       dashboard.classList.remove('hidden');
-      dashboard.innerHTML = `<div class="text-center py-10 text-slate-500 font-medium animate-pulse">Memuat data dari Firebase...</div>`;
+      dashboard.innerHTML = `<div class="text-center py-10 text-slate-500 font-medium animate-pulse">Menghitung Data Indeks dari Firebase...</div>`;
 
       try {
-        // Tarik data dari Firestore, langsung urutkan dari yang terbaru jika Firebase mendukung, 
-        // Namun karena pengaturan index diperlukan, kita ambil semua dan urutkan via JavaScript
         const querySnapshot = await window.getDocs(window.collection(window.db, "Data_SKM_Baru"));
         let dataRows = [];
         
         querySnapshot.forEach((doc) => {
           let data = doc.data();
-          // Format Timestamp Firebase menjadi string (Tanggal)
           let tglStr = "-";
           if (data.Timestamp && data.Timestamp.toDate) {
              let d = data.Timestamp.toDate();
@@ -422,7 +412,6 @@
           dataRows.push({ ...data, TanggalDibuat: tglStr, WaktuAsli: data.Timestamp ? data.Timestamp.toMillis() : 0 });
         });
 
-        // Urutkan dari yang terbaru (Descending)
         dataRows.sort((a, b) => b.WaktuAsli - a.WaktuAsli);
         renderTabelAdmin(dataRows);
       } catch (e) {
@@ -432,16 +421,88 @@
     }
 
     function renderTabelAdmin(data) {
+      // 1. Kalkulasi Statistik Kumulatif & Per Layanan
+      let totalResponden = data.length;
+      let totalIKM = 0;
+      let layananStats = {};
+
+      data.forEach(row => {
+        let ikm = parseFloat(row["Nilai IKM"]) || 0;
+        totalIKM += ikm;
+
+        let layanan = row["Jenis Layanan"] || "Lainnya";
+        if(!layananStats[layanan]) {
+           layananStats[layanan] = { totalIKM: 0, count: 0 };
+        }
+        layananStats[layanan].totalIKM += ikm;
+        layananStats[layanan].count += 1;
+      });
+
+      let indeksKumulatif = totalResponden > 0 ? (totalIKM / totalResponden).toFixed(2) : 0;
+      let mutuKumulatif = "-";
+      if (indeksKumulatif >= 88.31) mutuKumulatif = "A (Sangat Baik)";
+      else if (indeksKumulatif >= 76.61) mutuKumulatif = "B (Baik)";
+      else if (indeksKumulatif >= 65.00) mutuKumulatif = "C (Kurang Baik)";
+      else if (totalResponden > 0) mutuKumulatif = "D (Tidak Baik)";
+
+      // 2. Buat HTML Kartu Per Layanan
+      let layananHTML = '';
+      for (const [layanan, stat] of Object.entries(layananStats)) {
+         let avg = (stat.totalIKM / stat.count).toFixed(2);
+         let m = avg >= 88.31 ? "A" : (avg >= 76.61 ? "B" : (avg >= 65.0 ? "C" : "D"));
+         let colorText = m === "A" ? "text-green-700" : (m === "B" ? "text-blue-700" : (m === "C" ? "text-yellow-600" : "text-red-600"));
+         
+         layananHTML += `
+           <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm flex flex-col justify-between hover:border-blue-300 transition">
+             <div class="text-xs font-bold text-slate-800 mb-2 leading-tight">${layanan}</div>
+             <div class="flex justify-between items-end mt-auto">
+                <div class="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded font-semibold">${stat.count} Responden</div>
+                <div class="text-right">
+                  <div class="text-lg font-black ${colorText}">${avg}</div>
+                  <div class="text-[10px] font-bold text-slate-400">MUTU: ${m}</div>
+                </div>
+             </div>
+           </div>
+         `;
+      }
+      if(Object.keys(layananStats).length === 0) layananHTML = `<div class="text-sm text-slate-500 col-span-full">Belum ada data layanan untuk dihitung.</div>`;
+
+      // 3. Render Keseluruhan Dashboard
       let html = `
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
-              <h2 class="text-2xl font-bold text-slate-900">Dashboard Admin</h2>
-              <p class="text-sm text-slate-500">Total Responden: <span class="font-bold text-blue-700">${data.length}</span></p>
+              <h2 class="text-2xl font-bold text-slate-900">Dashboard Admin SKM</h2>
+              <p class="text-sm text-slate-500">Pemantauan Indeks Kepuasan Masyarakat</p>
             </div>
             <button onclick="closeAdminView()" class="bg-red-50 text-red-600 border border-red-200 px-5 py-2.5 rounded-xl font-semibold hover:bg-red-100 transition shadow-sm text-sm">Tutup Dashboard</button>
         </div>
+
+        <!-- Ringkasan Kumulatif -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
+                <div class="relative z-10">
+                    <p class="text-blue-100 text-sm font-medium mb-1">Nilai Indeks Kumulatif</p>
+                    <div class="text-4xl font-black mb-1">${indeksKumulatif}</div>
+                    <p class="text-sm font-bold bg-white/20 inline-block px-3 py-1 rounded-full mt-2">Mutu: ${mutuKumulatif}</p>
+                </div>
+                <div class="absolute -right-6 -bottom-6 text-blue-500 opacity-20 text-9xl font-black">IKM</div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center text-center">
+                <p class="text-slate-500 text-sm font-medium mb-2">Total Responden Masuk</p>
+                <div class="text-5xl font-black text-slate-800">${totalResponden}</div>
+                <p class="text-xs text-slate-400 mt-3">Data tersinkronisasi dari Firebase</p>
+            </div>
+        </div>
         
-        <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+        <!-- Indeks Per Layanan -->
+        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Indeks Kepuasan per Layanan</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-10">
+            ${layananHTML}
+        </div>
+
+        <!-- Tabel Detail -->
+        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Detail Data Responden</h3>
+        <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm mb-6">
             <table class="w-full text-sm text-left whitespace-nowrap">
                 <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
                     <tr>
