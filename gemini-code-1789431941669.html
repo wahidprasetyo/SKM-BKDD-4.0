@@ -1,0 +1,424 @@
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="https://i.ibb.co.com/DjVWc28/afcda308e5f15b9264a9837f97af436c-1.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-SKM - BKDD Kabupaten Sorong</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Library PDF Generator -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .step-content { display: none; }
+    .step-content.active { display: block; animation: fadeIn 0.4s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    input[type="radio"]:checked + span { color: #1d4ed8; font-weight: 700; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3 sm:space-x-4">
+        <img src="https://i.ibb.co.com/DjVWc28/afcda308e5f15b9264a9837f97af436c-1.png" alt="Logo Pemkab Sorong" id="logoAdmin" onclick="clickLogoAdmin()" class="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-sm cursor-pointer select-none">
+        <div>
+          <h1 class="font-bold text-slate-900 tracking-tight text-sm sm:text-base">BKDD KABUPATEN SORONG</h1>
+          <p class="text-[10px] sm:text-xs text-slate-500">Survei Kepuasan Masyarakat</p>
+        </div>
+      </div>
+      <span class="text-[10px] sm:text-xs font-semibold bg-blue-50 text-blue-800 px-3 py-1 rounded-full border border-blue-200 hidden sm:inline-block">E-SKM v4.0 (Firebase)</span>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow relative">
+    
+    <div id="progressContainer" class="max-w-3xl mx-auto mb-8 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center text-xs font-medium text-slate-400 overflow-x-auto whitespace-nowrap">
+      <div id="p-step1" class="text-blue-700 font-semibold flex items-center gap-1"><span class="w-5 h-5 rounded-full bg-blue-700 text-white flex items-center justify-center text-[10px]">1</span> Profil</div>
+      <div class="h-px bg-slate-200 flex-grow mx-4 min-w-[20px]"></div>
+      <div id="p-step2" class="flex items-center gap-1"><span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">2</span> Layanan</div>
+      <div class="h-px bg-slate-200 flex-grow mx-4 min-w-[20px]"></div>
+      <div id="p-step3" class="flex items-center gap-1"><span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">3</span> Penilaian IKM</div>
+    </div>
+
+    <form id="skmForm" class="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 relative">
+      <div id="step1" class="step-content active space-y-6">
+        <div><h2 class="text-xl font-bold text-slate-900">Profil Responden</h2><p class="text-sm text-slate-500 mt-1">Silakan lengkapi data kedinasan Anda. Data privasi Anda dijamin kerahasiaannya.</p></div>
+        <hr class="border-slate-100">
+        
+        <div class="space-y-2"><label class="block text-sm font-semibold text-slate-700">Nama Lengkap <span class="text-red-500">*</span></label>
+        <input type="text" id="namaLengkap" required placeholder="Masukkan nama lengkap Anda" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition"></div>
+
+        <div class="space-y-2"><label class="block text-sm font-semibold text-slate-700">NIP <span class="text-red-500">*</span></label>
+        <input type="text" id="nip" required placeholder="Masukkan NIP (Isi '-' jika Non-Pegawai)" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition"></div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Status Kepegawaian <span class="text-red-500">*</span></label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-blue-50 transition"><input type="radio" name="statusKepegawaian" value="PNS" required class="accent-blue-700 w-4 h-4"> <span class="text-sm font-medium">PNS</span></label>
+            <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-blue-50 transition"><input type="radio" name="statusKepegawaian" value="CPNS" class="accent-blue-700 w-4 h-4"> <span class="text-sm font-medium">CPNS</span></label>
+            <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-blue-50 transition"><input type="radio" name="statusKepegawaian" value="PPPK" class="accent-blue-700 w-4 h-4"> <span class="text-sm font-medium">PPPK</span></label>
+            <label class="border border-slate-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-blue-50 transition"><input type="radio" name="statusKepegawaian" value="Non-Pegawai" class="accent-blue-700 w-4 h-4"> <span class="text-sm font-medium">Non-Pegawai</span></label>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Perangkat Daerah/Unit Kerja <span class="text-red-500">*</span></label>
+          <select id="unitKerja" required class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition cursor-pointer">
+            <option value="">-- Pilih Unit Kerja --</option>
+            <option value="Non-Pegawai">Non-Pegawai</option>
+            <option value="Sekretariat Daerah">Sekretariat Daerah</option>
+            <option value="Dinas Kesehatan">Dinas Kesehatan</option>
+            <option value="Dinas Pendidikan dan Kebudayaan">Dinas Pendidikan dan Kebudayaan</option>
+            <!-- Tambahkan kembali option unit kerja Anda yang lain di sini agar tidak terlalu panjang -->
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-slate-700">Jabatan <span class="text-red-500">*</span></label>
+          <select id="jabatan" required class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition cursor-pointer">
+            <option value="">-- Pilih Jabatan --</option>
+            <option value="Non-Pegawai">Non-Pegawai</option>
+            <option value="Fungsional Tertentu">Fungsional Tertentu</option>
+            <option value="Pelaksana">Pelaksana</option>
+            <option value="Pengawas">Pengawas</option>
+            <option value="Administrator">Administrator</option>
+            <option value="Jabatan Pimpinan Tinggi">Jabatan Pimpinan Tinggi</option>
+          </select>
+        </div>
+        
+        <div class="pt-6 flex justify-end">
+          <button type="button" onclick="nextStep(2)" class="bg-slate-900 text-white font-medium text-sm px-8 py-3 rounded-xl hover:bg-slate-800 transition shadow-lg cursor-pointer">Lanjutkan</button>
+        </div>
+      </div>
+
+      <div id="step2" class="step-content space-y-6">
+        <div><h2 class="text-xl font-bold text-slate-900">Pilih Jenis Layanan</h2><p class="text-sm text-slate-500 mt-1">Apa jenis pelayanan kepegawaian yang Anda urus hari ini?</p></div>
+        <hr class="border-slate-100">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="daftarLayanan"></div>
+        <div class="pt-6 flex justify-between border-t border-slate-100 mt-6">
+          <button type="button" onclick="prevStep(1)" class="border border-slate-300 text-slate-700 font-medium text-sm px-6 py-3 rounded-xl hover:bg-slate-50 transition cursor-pointer">Kembali</button>
+          <button type="button" id="btnNextStep2" onclick="nextStep(3)" class="bg-slate-900 text-white font-medium text-sm px-8 py-3 rounded-xl hover:bg-slate-800 transition shadow-lg cursor-pointer">Lanjutkan</button>
+        </div>
+      </div>
+
+      <div id="step3" class="step-content space-y-8">
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm flex items-center justify-between">
+            <div><p class="text-xs text-blue-800 font-semibold uppercase tracking-wider">Anda Mengevaluasi Pelayanan:</p><p id="labelLayananTertulis" class="text-lg font-bold text-blue-900 mt-0.5">-</p></div>
+            <button type="button" onclick="prevStep(2)" class="text-xs text-blue-600 font-medium hover:underline bg-white px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm">Ubah Layanan</button>
+        </div>
+        <div><h2 class="text-xl font-bold text-slate-900">Penilaian Kinerja Makro (U1-U9)</h2><p class="text-sm text-slate-500 mt-1">Berikan penilaian terhadap layanan terpilih berdasarkan pengalaman Anda.</p></div>
+        <hr class="border-slate-100">
+        <div id="kuesionerContainer" class="space-y-6"></div>
+        <div class="space-y-2 mt-8">
+          <label class="block text-sm font-semibold text-slate-700">Kritik, Saran, atau Masukan Tertulis <span class="text-slate-400 font-normal">(Opsional)</span></label>
+          <textarea id="saran" rows="3" placeholder="Bagikan masukan atau apresiasi Anda..." class="w-full border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 hover:bg-white transition"></textarea>
+        </div>
+        <div class="pt-6 flex justify-between border-t border-slate-100 mt-6">
+          <button type="button" onclick="prevStep(2)" class="border border-slate-300 text-slate-700 font-medium text-sm px-6 py-3 rounded-xl hover:bg-slate-50 transition cursor-pointer hidden sm:block">Kembali</button>
+          <button type="button" id="btnSubmit" onclick="kirimData()" class="w-full sm:w-auto bg-blue-700 text-white font-bold text-sm px-10 py-3 rounded-xl hover:bg-blue-800 transition shadow-lg shadow-blue-700/30 cursor-pointer">Kirim Survei</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- UI SUCCESS CARD DENGAN TOMBOL DOWNLOAD -->
+    <div id="successCard" class="hidden absolute inset-0 z-10 bg-slate-50 flex flex-col items-center justify-center p-6 text-center animate-[fadeIn_0.5s_ease-out]">
+      <div class="w-20 h-20 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-4xl mx-auto font-bold shadow-sm mb-6">✓</div>
+      <h2 class="text-2xl font-bold text-slate-900 mb-2">Terima Kasih!</h2>
+      <p class="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto mb-8">Data kuesioner Anda telah berhasil dikirim. Silakan unduh sertifikat partisipasi Anda.</p>
+      <div class="flex flex-col sm:flex-row gap-3">
+         <button type="button" id="btnDownloadMurni" onclick="triggerDownloadBaru(this)" class="bg-blue-700 text-white text-sm px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg flex items-center justify-center gap-2">
+            Unduh Sertifikat Saya
+         </button>
+         <button onclick="window.location.reload()" class="bg-slate-900 text-white text-sm px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition shadow-lg">Isi Survei Baru</button>
+      </div>
+    </div>
+
+    <!-- UI PENCARIAN SISTEM -->
+    <div id="pencarianSistem" class="max-w-3xl mx-auto mt-8 border-t border-slate-200 pt-6 text-center animate-[fadeIn_0.4s]">
+       <p class="text-xs text-slate-500 font-medium">Sudah pernah mengisi survei? Cetak ulang sertifikat Anda.</p>
+       <div class="mt-3 flex justify-center items-center gap-2 max-w-sm mx-auto">
+          <input type="text" id="nipPencarian" placeholder="Masukkan NIP Anda" class="border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full bg-white shadow-sm">
+          <button type="button" id="btnCariSertifikat" onclick="cariDanUnduh(this)" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-bold px-5 py-3 rounded-xl transition shadow-sm whitespace-nowrap">Cari</button>
+       </div>
+    </div>
+
+  </main>
+
+  <footer class="bg-slate-900 text-slate-400 text-center py-5 border-t border-slate-800 text-xs font-light">
+    &copy; 2026 BKDD Kabupaten Sorong. All Rights Reserved.
+  </footer>
+
+  <!-- SCRIPT FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI
+    const firebaseConfig = {
+      apiKey: "API_KEY_ANDA",
+      authDomain: "PROJECT_ID.firebaseapp.com",
+      projectId: "PROJECT_ID",
+      storageBucket: "PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Mengekspos fungsi Firebase ke window agar bisa dipanggil dari inline HTML onClick
+    window.db = db;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.getDocs = getDocs;
+    window.query = query;
+    window.where = where;
+  </script>
+
+  <!-- SCRIPT LOGIKA UTAMA (TIDAK PERLU DIUBAH KECUALI NAMA FILE PDF) -->
+  <script>
+    // 2. MASUKKAN URL FILE TEMPLATE PDF ANDA DI SINI (Contoh: diletakkan di GitHub repo Anda)
+    const URL_TEMPLATE_PDF = "template_sertifikat.pdf"; 
+
+    // Pengaturan Teks Sertifikat (Dipindah dari Google Sheet ke sini)
+    const configSertifikat = {
+      NOMOR_SURAT: "Nomor: 012/BM.01.02/S.034/KR.XIV/VII/2026",
+      TEKS_PEMBUKA: "Kepala Kantor Regional XIV BKN Manokwari, berdasarkan Undang - Undang Nomor 20 Tahun 2023 tentang\\nAparatur Sipil Negara, dengan ini menyatakan bahwa Saudara/Saudari yang tersebut di bawah ini:",
+      TEKS_SEBAGAI: "sebagai Peserta dalam kegiatan:",
+      TEKS_KEGIATAN: "Bimbingan Teknis Layanan Manajemen ASN dengan materi \"Pemberhentian ASN\" dilingkungan Instansi Provinsi Papua\\nBarat yang diselenggarakan secara daring oleh Kantor Regional XIV BKN Manokwari selama 3 Jam Pelajaran (JP) pada\\ntanggal 29 Juli 2026."
+    };
+
+    let dataSertifikatGlobal = { nama: "", config: configSertifikat };
+    let currentStep = 1;
+
+    const daftarLayanan = ["Kenaikan Gaji Berkala (KGB)", "Tunjangan Keluarga", "Kenaikan Pangkat", "Satya Lencana Karya Satya", "Taspen dan Pensiun", "Mutasi Kepegawaian", "UD & UPKP", "Tugas Belajar", "Pengusulan Cuti Pegawai", "Pendampingan SKP", "Penerimaan Calon ASN", "Peremajaan Data", "Pencantuman Gelar", "Disiplin ASN"];
+    const daftarU9 = [
+      { id: "u1", tanya: "1. Apakah persyaratan pelayanan mudah dipahami?", opsi: ["Tidak Mudah", "Kurang Mudah", "Mudah", "Sangat Mudah"] },
+      { id: "u2", tanya: "2. Apakah alur atau prosedur pelayanan jelas?", opsi: ["Tidak Jelas", "Kurang Jelas", "Jelas", "Sangat Jelas"] },
+      { id: "u3", tanya: "3. Apakah penyelesaian layanan sesuai standar waktu?", opsi: ["Tidak Sesuai", "Kurang Sesuai", "Sesuai", "Sangat Sesuai"] },
+      { id: "u4", tanya: "4. Apakah pelayanan bebas dari pungutan liar (Gratis)?", opsi: ["Tidak Bebas", "Kurang Bebas", "Bebas", "Sangat Bebas"] },
+      { id: "u5", tanya: "5. Apakah produk/hasil layanan sesuai dengan ketentuan?", opsi: ["Tidak Sesuai", "Kurang Sesuai", "Sesuai", "Sangat Sesuai"] },
+      { id: "u6", tanya: "6. Bagaimana kompetensi/keahlian petugas melayani?", opsi: ["Tidak Kompeten", "Kurang Kompeten", "Kompeten", "Sangat Kompeten"] },
+      { id: "u7", tanya: "7. Bagaimana sikap petugas (sopan/ramah)?", opsi: ["Tidak Sopan", "Kurang Sopan", "Sopan", "Sangat Sopan"] },
+      { id: "u8", tanya: "8. Bagaimana respons BKDD terhadap pengaduan/saran?", opsi: ["Tidak Responsif", "Kurang Responsif", "Responsif", "Sangat Responsif"] },
+      { id: "u9", tanya: "9. Bagaimana kondisi fasilitas/sarana prasarana?", opsi: ["Tidak Memadai", "Kurang Memadai", "Memadai", "Sangat Memadai"] }
+    ];
+
+    window.onload = () => {
+      const containerLay = document.getElementById("daftarLayanan");
+      daftarLayanan.forEach(lay => {
+        containerLay.innerHTML += `<label class="border border-slate-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-blue-50 transition bg-slate-50"><input type="radio" name="jenisLayanan" value="${lay}" class="accent-blue-700 w-4 h-4"> <span class="text-sm font-semibold text-slate-800">${lay}</span></label>`;
+      });
+
+      const containerU = document.getElementById("kuesionerContainer");
+      daftarU9.forEach(u => {
+        containerU.innerHTML += `<div class="space-y-3 p-4 bg-slate-50 border border-slate-100 rounded-xl"><label class="block text-sm font-semibold text-slate-800">${u.tanya}</label><div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <label class="bg-white border border-slate-200 rounded-xl p-3 text-center cursor-pointer text-xs font-medium hover:border-blue-300 transition"><input type="radio" name="${u.id}" value="1" required class="accent-blue-700 mb-1"> <br><span>${u.opsi[0]}</span></label>
+              <label class="bg-white border border-slate-200 rounded-xl p-3 text-center cursor-pointer text-xs font-medium hover:border-blue-300 transition"><input type="radio" name="${u.id}" value="2" class="accent-blue-700 mb-1"> <br><span>${u.opsi[1]}</span></label>
+              <label class="bg-white border border-slate-200 rounded-xl p-3 text-center cursor-pointer text-xs font-medium hover:border-blue-300 transition"><input type="radio" name="${u.id}" value="3" class="accent-blue-700 mb-1"> <br><span>${u.opsi[2]}</span></label>
+              <label class="bg-white border border-slate-200 rounded-xl p-3 text-center cursor-pointer text-xs font-medium hover:border-blue-300 transition"><input type="radio" name="${u.id}" value="4" class="accent-blue-700 mb-1"> <br><span>${u.opsi[3]}</span></label>
+            </div></div>`;
+      });
+    };
+
+    function nextStep(step) {
+      if (step === 2) {
+        if(!document.getElementById("namaLengkap").value.trim() || !document.getElementById("nip").value.trim() || !document.querySelector('input[name="statusKepegawaian"]:checked') || !document.getElementById("unitKerja").value || !document.getElementById("jabatan").value) { alert("Lengkapi data profil."); return; }
+      }
+      if (step === 3) {
+        let layananPilihan = document.querySelector('input[name="jenisLayanan"]:checked');
+        if(!layananPilihan) { alert("Pilih jenis layanan."); return; }
+        document.getElementById("labelLayananTertulis").innerText = layananPilihan.value;
+      }
+      document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active'); currentStep = step; window.scrollTo(0, 0);
+      document.querySelectorAll('[id^="p-step"]').forEach((el, index) => {
+        if (index + 1 <= step) { el.classList.add('text-blue-700', 'font-semibold'); el.querySelector('span').classList.replace('bg-slate-200', 'bg-blue-700'); el.querySelector('span').classList.replace('text-slate-600', 'text-white'); } else { el.classList.remove('text-blue-700', 'font-semibold'); el.querySelector('span').classList.replace('bg-blue-700', 'bg-slate-200'); el.querySelector('span').classList.replace('text-white', 'text-slate-600'); }
+      });
+    }
+
+    function prevStep(step) { document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active')); document.getElementById(`step${step}`).classList.add('active'); currentStep = step; window.scrollTo(0, 0); }
+
+    async function kirimData() {
+      for(let i=1; i<=9; i++) { if(!document.querySelector(`input[name="u${i}"]:checked`)) { alert(`Belum menilai nomor ${i}.`); return; } }
+
+      // Logika Kalkulasi Dipindah dari Apps Script ke sini
+      let u1 = parseInt(document.querySelector('input[name="u1"]:checked').value);
+      let u2 = parseInt(document.querySelector('input[name="u2"]:checked').value);
+      let u3 = parseInt(document.querySelector('input[name="u3"]:checked').value);
+      let u4 = parseInt(document.querySelector('input[name="u4"]:checked').value);
+      let u5 = parseInt(document.querySelector('input[name="u5"]:checked').value);
+      let u6 = parseInt(document.querySelector('input[name="u6"]:checked').value);
+      let u7 = parseInt(document.querySelector('input[name="u7"]:checked').value);
+      let u8 = parseInt(document.querySelector('input[name="u8"]:checked').value);
+      let u9 = parseInt(document.querySelector('input[name="u9"]:checked').value);
+
+      let totalNilai = u1 + u2 + u3 + u4 + u5 + u6 + u7 + u8 + u9;
+      let nilaiIKM = (totalNilai / 9) * 25; 
+      
+      let mutuPelayanan = "-";
+      if (nilaiIKM >= 88.31) mutuPelayanan = "A (Sangat Baik)";
+      else if (nilaiIKM >= 76.61) mutuPelayanan = "B (Baik)";
+      else if (nilaiIKM >= 65.00) mutuPelayanan = "C (Kurang Baik)";
+      else mutuPelayanan = "D (Tidak Baik)";
+
+      let payload = {
+        Timestamp: new Date(),
+        "Nama Lengkap": document.getElementById('namaLengkap').value, 
+        "NIP": document.getElementById('nip').value,
+        "Status Kepegawaian": document.querySelector('input[name="statusKepegawaian"]:checked').value,
+        "Perangkat Daerah / Unit Kerja": document.getElementById('unitKerja').value, 
+        "Jabatan": document.getElementById('jabatan').value,
+        "Jenis Layanan": document.querySelector('input[name="jenisLayanan"]:checked').value,
+        "U1 (Persyaratan)": u1, "U2 (Prosedur)": u2, "U3 (Waktu)": u3, "U4 (Biaya/Tarif)": u4, "U5 (Produk)": u5, 
+        "U6 (Kompetensi)": u6, "U7 (Perilaku)": u7, "U8 (Pengaduan)": u8, "U9 (Sarpras)": u9, 
+        "Total Nilai U1-U9": totalNilai, 
+        "Nilai IKM Konversi": nilaiIKM.toFixed(2), 
+        "Mutu Pelayanan": mutuPelayanan, 
+        "Kritik & Saran": document.getElementById('saran').value || "-"
+      };
+
+      const btn = document.getElementById('btnSubmit'); const originText = btn.innerHTML;
+      btn.innerHTML = "Memproses Data..."; btn.disabled = true;
+
+      try {
+        // Proses simpan ke Firestore
+        await window.addDoc(window.collection(window.db, "Data_SKM_Baru"), payload);
+        
+        document.getElementById('skmForm').classList.add('hidden');
+        document.getElementById('progressContainer').classList.add('hidden');
+        document.getElementById('pencarianSistem').classList.add('hidden');
+        document.getElementById('successCard').classList.remove('hidden');
+        
+        dataSertifikatGlobal.nama = payload["Nama Lengkap"];
+      } catch (e) {
+        alert('Gagal menyimpan data ke Firebase: ' + e.message); 
+        btn.innerHTML = originText; 
+        btn.disabled = false;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // LOGIKA GENERATE PDF (Mengambil file via Fetch API, bukan Base64)
+    // -------------------------------------------------------------
+    async function buatDokumenPDF(nama, config) {
+        const { PDFDocument, rgb, StandardFonts } = PDFLib;
+        
+        // Ambil PDF Template secara lokal/URL
+        const urlBytes = await fetch(URL_TEMPLATE_PDF).then(res => res.arrayBuffer());
+        const pdfDoc = await PDFDocument.load(urlBytes);
+        
+        const pages = pdfDoc.getPages();
+        const page = pages[0]; 
+        const { width, height } = page.getSize(); 
+        
+        const fontReg = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        
+        const drawCenter = (text, y, font, size, color = rgb(0,0,0)) => {
+          const textWidth = font.widthOfTextAtSize(text, size);
+          page.drawText(text, { x: (width - textWidth) / 2, y, size, font, color });
+        };
+    
+        const wrapText = (text, maxWidth, font, size) => {
+          const words = text.split(" ");
+          let lines = [];
+          let currentLine = words[0];
+    
+          for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = font.widthOfTextAtSize(currentLine + " " + word, size);
+            if (width < maxWidth) {
+              currentLine += " " + word;
+            } else {
+              lines.push(currentLine);
+              currentLine = word;
+            }
+          }
+          lines.push(currentLine);
+          return lines;
+        };
+    
+        drawCenter(config.NOMOR_SURAT || "", height - 200, fontReg, 13);
+        
+        let currY = height - 240;
+        if(config.TEKS_PEMBUKA) {
+           let wrappedPembuka = wrapText(config.TEKS_PEMBUKA.replace(/\\n/g, " "), 650, fontReg, 11);
+           wrappedPembuka.forEach(baris => { drawCenter(baris, currY, fontReg, 11); currY -= 15; });
+        }
+        
+        currY -= 25;
+        drawCenter((nama || "PESERTA").toUpperCase(), currY, fontBold, 26);
+        
+        currY -= 25;
+        drawCenter(config.TEKS_SEBAGAI || "", currY, fontReg, 12);
+        
+        currY -= 20; 
+        if(config.TEKS_KEGIATAN) {
+           let wrappedKegiatan = wrapText(config.TEKS_KEGIATAN.replace(/\\n/g, " "), 520, fontBold, 12);
+           wrappedKegiatan.forEach(baris => { drawCenter(baris, currY, fontBold, 12); currY -= 16; });
+        }
+    
+        const pdfBytesSaved = await pdfDoc.save();
+        const blob = new Blob([pdfBytesSaved], { type: "application/pdf" });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Sertifikat_B.01_${nama.replace(/\s+/g, '_')}.pdf`;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+
+    async function triggerDownloadBaru(btnElement) {
+        const originTxt = btnElement.innerHTML;
+        btnElement.innerHTML = "Mengunduh..."; btnElement.disabled = true;
+
+        try {
+           await buatDokumenPDF(dataSertifikatGlobal.nama, dataSertifikatGlobal.config);
+           btnElement.innerHTML = "✅ Berhasil";
+        } catch(e) { 
+           alert("Gagal membuat sertifikat. Pastikan file PDF template ada di URL yang benar.");
+        }
+        
+        setTimeout(() => { btnElement.innerHTML = originTxt; btnElement.disabled = false; }, 3000);
+    }
+
+    async function cariDanUnduh(btnElement) {
+        const nipStr = document.getElementById('nipPencarian').value.trim();
+        if(!nipStr) { alert("Silakan masukkan NIP!"); return; }
+
+        const originTxt = btnElement.innerHTML;
+        btnElement.innerHTML = "Mencari..."; btnElement.disabled = true;
+
+        try {
+          // Melakukan pencarian Query di Firestore berdasarkan NIP
+          const q = window.query(window.collection(window.db, "Data_SKM_Baru"), window.where("NIP", "==", nipStr));
+          const querySnapshot = await window.getDocs(q);
+          
+          if(querySnapshot.empty) {
+             alert("NIP Tidak Ditemukan.");
+          } else {
+             // Ambil dokumen terbaru (jika NIP mengisi lebih dari sekali, kita ambil yang pertama terbaca)
+             let namaResponden = "";
+             querySnapshot.forEach((doc) => {
+                namaResponden = doc.data()["Nama Lengkap"];
+             });
+
+             btnElement.innerHTML = "Mengunduh...";
+             await buatDokumenPDF(namaResponden, configSertifikat);
+             btnElement.innerHTML = "✅ Selesai";
+          }
+        } catch(e) { 
+           alert("Gagal menyambung ke Firebase."); 
+        }
+
+        setTimeout(() => { btnElement.innerHTML = originTxt; btnElement.disabled = false; }, 3000);
+    }
+
+    function clickLogoAdmin() { 
+        // Anda dapat menambahkan logika admin tabel di sini seperti sebelumnya
+        // menggunakan getDocs(collection(db, "Data_SKM_Baru")) untuk menarik data.
+        alert("Mode admin tidak dipasang di template ini untuk fokus pada input data.");
+    }
+  </script>
+</body>
+</html>
