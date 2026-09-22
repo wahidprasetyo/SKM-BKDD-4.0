@@ -215,6 +215,23 @@
       </div>
     </form>
 
+    <!-- MODAL LOGIN ADMIN -->
+    <div id="loginModal" class="hidden fixed inset-0 z-[100] bg-slate-900/50 flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.3s]">
+        <div class="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full">
+            <h2 class="text-xl font-bold text-slate-900 mb-1">Login Administrator</h2>
+            <p class="text-xs text-slate-500 mb-5">Silakan masuk untuk mengakses dashboard admin.</p>
+            <div class="space-y-3 mb-4">
+                <input type="email" id="adminEmail" placeholder="Email Admin" class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+                <input type="password" id="adminPassword" placeholder="Password Admin" class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+            </div>
+            <p id="loginErrorMsg" class="text-red-500 text-xs mb-4 hidden font-medium"></p>
+            <div class="flex gap-2">
+                <button onclick="batalLogin()" class="flex-1 bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium py-3 rounded-xl text-sm transition cursor-pointer">Batal</button>
+                <button onclick="prosesLogin()" id="btnLoginSubmit" class="flex-1 bg-blue-700 text-white hover:bg-blue-800 font-bold py-3 rounded-xl text-sm transition shadow-md shadow-blue-700/30 cursor-pointer">Masuk</button>
+            </div>
+        </div>
+    </div>
+
     <!-- UI DASHBOARD ADMIN -->
     <div id="adminDashboard" class="hidden w-full max-w-full bg-white border border-slate-200 rounded-2xl shadow-xl p-6 sm:p-8 animate-[fadeIn_0.4s]">
        <!-- Konten akan diisi oleh JS -->
@@ -246,10 +263,11 @@
     &copy; 2026 BKDD Kabupaten Sorong. All Rights Reserved.
   </footer>
 
-  <!-- SCRIPT FIREBASE -->
+  <!-- SCRIPT FIREBASE (DIPERBARUI DENGAN AUTHENTICATION) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, getDoc, setDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDwfx-W0lLngFkbD_9AV5otI_hxaDmaLqg",
@@ -262,8 +280,12 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app); // inisialisasi Auth
 
     window.db = db;
+    window.auth = auth;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.signOut = signOut;
     window.collection = collection;
     window.addDoc = addDoc;
     window.getDocs = getDocs;
@@ -280,7 +302,7 @@
     const URL_TEMPLATE_PDF = "template_sertifikat.pdf"; 
 
     let configSertifikat = {
-      STATUS_SERTIFIKAT: "OFF", // Default OFF (SKM berjalan normal tanpa sertifikat)
+      STATUS_SERTIFIKAT: "OFF", 
       NOMOR_SURAT: "Nomor: 012/BM.01.02/S.034/KR.XIV/VII/2026",
       TEKS_PEMBUKA: "Kepala Kantor Regional XIV BKN Manokwari, berdasarkan Undang - Undang Nomor 20 Tahun 2023 tentang\\nAparatur Sipil Negara, dengan ini menyatakan bahwa Saudara/Saudari yang tersebut di bawah ini:",
       TEKS_SEBAGAI: "sebagai Peserta dalam kegiatan:",
@@ -315,7 +337,6 @@
         console.log("Menggunakan konfigurasi default.");
       }
 
-      // Atur visibilitas kotak pencarian sertifikat di halaman utama sesuai status On/Off
       aturTampilanSertifikatUI();
 
       const containerLay = document.getElementById("daftarLayanan");
@@ -416,7 +437,6 @@
         document.getElementById('pencarianSistem').classList.add('hidden');
         document.getElementById('successCard').classList.remove('hidden');
         
-        // Atur pesan dan tombol di success card berdasarkan status ON/OFF sertifikat
         const msgText = document.getElementById('successMessageText');
         const containerTombol = document.getElementById('containerTombolSertifikat');
 
@@ -529,7 +549,7 @@
     }
 
     // =========================================================================
-    // FITUR MENU ADMIN & PENGATURAN SERTIFIKAT (DENGAN ON/OFF)
+    // FITUR MENU ADMIN DENGAN FIREBASE AUTH & PENGATURAN SERTIFIKAT
     // =========================================================================
     let clickCount = 0;
     let clickTimer;
@@ -541,14 +561,38 @@
 
       if (clickCount >= 5) {
         clickCount = 0; 
-        let password = prompt("Masukkan Password Admin:");
-        
-        if (password === "adminBKDD2026") {
-          loadAdminData();
-        } else if (password !== null) {
-          alert("Password Salah!");
-        }
+        document.getElementById('loginModal').classList.remove('hidden');
       }
+    }
+
+    function batalLogin() {
+        document.getElementById('loginModal').classList.add('hidden');
+        document.getElementById('loginErrorMsg').classList.add('hidden');
+        document.getElementById('adminEmail').value = "";
+        document.getElementById('adminPassword').value = "";
+    }
+
+    async function prosesLogin() {
+        const email = document.getElementById('adminEmail').value;
+        const password = document.getElementById('adminPassword').value;
+        const btnLogin = document.getElementById('btnLoginSubmit');
+        const errorMsg = document.getElementById('loginErrorMsg');
+        
+        btnLogin.innerHTML = "Memeriksa...";
+        btnLogin.disabled = true;
+        errorMsg.classList.add('hidden');
+
+        try {
+            await window.signInWithEmailAndPassword(window.auth, email, password);
+            batalLogin();
+            loadAdminData(); 
+        } catch (error) {
+            errorMsg.innerText = "Email atau Password salah!";
+            errorMsg.classList.remove('hidden');
+        } finally {
+            btnLogin.innerHTML = "Masuk";
+            btnLogin.disabled = false;
+        }
     }
 
     async function loadAdminData() {
@@ -585,7 +629,7 @@
         dataCacheAdmin = dataRows;
         renderTabelAdmin(dataRows);
       } catch (e) {
-        dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan: ${e.message}</div>
+        dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan / Akses ditolak: ${e.message}</div>
                                <div class="text-center"><button onclick="closeAdminView()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Tutup Admin</button></div>`;
       }
     }
@@ -811,7 +855,11 @@
       document.getElementById('adminDashboard').innerHTML = html;
     }
 
-    function closeAdminView() {
+    async function closeAdminView() {
+      try {
+         await window.signOut(window.auth); // Logout Firebase
+      } catch(e) { console.log(e); }
+      
       document.getElementById('adminDashboard').classList.add('hidden');
       document.getElementById('skmForm').classList.remove('hidden');
       document.getElementById('progressContainer').classList.remove('hidden');
