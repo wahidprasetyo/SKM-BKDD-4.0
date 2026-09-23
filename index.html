@@ -131,7 +131,6 @@
             <option value="Distrik Konhir">Distrik Konhir</option>
             <option value="Distrik Klasafet">Distrik Klasafet</option>
             <option value="Distrik Hobard">Distrik Hobard</option>
-            <option value="Distrik Hobard">Distrik Hobard</option>
             <option value="Distrik Botain">Distrik Botain</option>
             <option value="Distrik Sayosa Timur">Distrik Sayosa Timur</option>
             <option value="Puskesmas Malawili">Puskesmas Malawili</option>
@@ -237,18 +236,17 @@
        <!-- Konten akan diisi oleh JS -->
     </div>
 
-    <!-- UI SUCCESS CARD DENGAN TOMBOL DOWNLOAD (Dinamis Berdasarkan Fitur On/Off) -->
+    <!-- UI SUCCESS CARD DENGAN TOMBOL DOWNLOAD -->
     <div id="successCard" class="hidden absolute inset-0 z-10 bg-slate-50 flex flex-col items-center justify-center p-6 text-center animate-[fadeIn_0.5s_ease-out]">
       <div class="w-20 h-20 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-4xl mx-auto font-bold shadow-sm mb-6">✓</div>
       <h2 class="text-2xl font-bold text-slate-900 mb-2">Terima Kasih!</h2>
       <p id="successMessageText" class="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto mb-8">Data kuesioner Anda telah berhasil dikirim.</p>
       <div class="flex flex-col sm:flex-row gap-3 justify-center" id="containerTombolSertifikat">
-         <!-- Tombol download akan muncul/hilang otomatis di sini sesuai status On/Off -->
          <button onclick="window.location.reload()" class="bg-slate-900 text-white text-sm px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition shadow-lg">Isi Survei Baru</button>
       </div>
     </div>
 
-    <!-- UI PENCARIAN SISTEM (Hanya tampil jika fitur sertifikat ON) -->
+    <!-- UI PENCARIAN SISTEM -->
     <div id="pencarianSistem" class="max-w-3xl mx-auto mt-8 border-t border-slate-200 pt-6 text-center animate-[fadeIn_0.4s]">
        <p class="text-xs text-slate-500 font-medium" id="teksPencarianSertifikat">Sudah pernah mengisi survei? Cetak ulang sertifikat Anda.</p>
        <div id="boxPencarianNIP" class="mt-3 flex justify-center items-center gap-2 max-w-sm mx-auto">
@@ -263,10 +261,10 @@
     &copy; 2026 BKDD Kabupaten Sorong. All Rights Reserved.
   </footer>
 
-  <!-- SCRIPT FIREBASE (DIPERBARUI DENGAN AUTHENTICATION) -->
+  <!-- SCRIPT FIREBASE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, getDoc, setDoc, doc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, getDoc, setDoc, doc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -280,7 +278,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app); // inisialisasi Auth
+    const auth = getAuth(app); 
 
     window.db = db;
     window.auth = auth;
@@ -295,6 +293,7 @@
     window.query = query;
     window.where = where;
     window.orderBy = orderBy;
+    window.onSnapshot = onSnapshot; 
   </script>
 
   <!-- SCRIPT LOGIKA UTAMA -->
@@ -312,6 +311,7 @@
     let dataSertifikatGlobal = { nama: "", config: configSertifikat };
     let currentStep = 1;
     let dataCacheAdmin = [];
+    let unsubAdminData = null; // Variabel koneksi real-time admin
 
     const daftarLayanan = ["Kenaikan Gaji Berkala (KGB)", "Tunjangan Keluarga", "Kenaikan Pangkat", "Satya Lencana Karya Satya", "Taspen dan Pensiun", "Mutasi Kepegawaian", "UD & UPKP", "Tugas Belajar", "Pengusulan Cuti Pegawai", "Pendampingan SKP", "Penerimaan Calon ASN", "Peremajaan Data", "Pencantuman Gelar", "Disiplin ASN"];
     const daftarU9 = [
@@ -549,7 +549,7 @@
     }
 
     // =========================================================================
-    // FITUR MENU ADMIN DENGAN FIREBASE AUTH & PENGATURAN SERTIFIKAT
+    // FITUR MENU ADMIN DENGAN FIREBASE AUTH & REAL-TIME ONSNAPSHOT
     // =========================================================================
     let clickCount = 0;
     let clickTimer;
@@ -602,34 +602,37 @@
       
       const dashboard = document.getElementById('adminDashboard');
       dashboard.classList.remove('hidden');
-      dashboard.innerHTML = `<div class="text-center py-10 text-slate-500 font-medium animate-pulse">Menghitung Data Indeks dari Firebase...</div>`;
+      dashboard.innerHTML = `<div class="text-center py-10 text-slate-500 font-medium animate-pulse">Menghubungkan ke Database (Real-time)...</div>`;
 
       try {
-        const [querySnapshot, configSnap] = await Promise.all([
-          window.getDocs(window.collection(window.db, "Data_SKM_Baru")),
-          window.getDoc(window.doc(window.db, "Pengaturan_Sistem", "Sertifikat_Config"))
-        ]);
-
+        // Ambil konfigurasi sistem sekali sebelum memuat tabel
+        const configSnap = await window.getDoc(window.doc(window.db, "Pengaturan_Sistem", "Sertifikat_Config"));
         if (configSnap.exists()) {
           configSertifikat = configSnap.data();
         }
 
-        let dataRows = [];
-        querySnapshot.forEach((doc) => {
-          let data = doc.data();
-          let tglStr = "-";
-          if (data.Timestamp && data.Timestamp.toDate) {
-             let d = data.Timestamp.toDate();
-             tglStr = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-          }
-          dataRows.push({ ...data, TanggalDibuat: tglStr, WaktuAsli: data.Timestamp ? data.Timestamp.toMillis() : 0 });
-        });
+        // Listener Real-time onSnapshot
+        unsubAdminData = window.onSnapshot(window.collection(window.db, "Data_SKM_Baru"), (querySnapshot) => {
+          let dataRows = [];
+          querySnapshot.forEach((doc) => {
+            let data = doc.data();
+            let tglStr = "-";
+            if (data.Timestamp && data.Timestamp.toDate) {
+               let d = data.Timestamp.toDate();
+               tglStr = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+            }
+            dataRows.push({ ...data, TanggalDibuat: tglStr, WaktuAsli: data.Timestamp ? data.Timestamp.toMillis() : 0 });
+          });
 
-        dataRows.sort((a, b) => b.WaktuAsli - a.WaktuAsli);
-        dataCacheAdmin = dataRows;
-        renderTabelAdmin(dataRows);
+          dataRows.sort((a, b) => b.WaktuAsli - a.WaktuAsli);
+          dataCacheAdmin = dataRows;
+          renderTabelAdmin(dataRows);
+        }, (error) => {
+          dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan / Akses ditolak: ${error.message}</div>
+                                 <div class="text-center"><button onclick="closeAdminView()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Tutup Admin</button></div>`;
+        });
       } catch (e) {
-        dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Terjadi kesalahan / Akses ditolak: ${e.message}</div>
+        dashboard.innerHTML = `<div class="text-center py-10 text-red-500">Gagal memuat pengaturan sistem: ${e.message}</div>
                                <div class="text-center"><button onclick="closeAdminView()" class="bg-slate-900 text-white px-5 py-2 rounded-xl">Tutup Admin</button></div>`;
       }
     }
@@ -770,7 +773,7 @@
             <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-center items-center text-center">
                 <p class="text-slate-500 text-sm font-medium mb-2">Total Responden Masuk</p>
                 <div class="text-5xl font-black text-slate-800">${totalResponden}</div>
-                <p class="text-xs text-slate-400 mt-3">Tersinkronisasi otomatis dengan Firebase</p>
+                <p class="text-xs text-slate-400 mt-3">Status: Real-time Live (Tersinkronisasi otomatis)</p>
             </div>
         </div>
         
@@ -856,8 +859,14 @@
     }
 
     async function closeAdminView() {
+      // Putuskan koneksi real-time jika ada sebelum menutup
+      if (unsubAdminData) {
+         unsubAdminData();
+         unsubAdminData = null;
+      }
+
       try {
-         await window.signOut(window.auth); // Logout Firebase
+         await window.signOut(window.auth);
       } catch(e) { console.log(e); }
       
       document.getElementById('adminDashboard').classList.add('hidden');
